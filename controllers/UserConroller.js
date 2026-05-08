@@ -128,8 +128,47 @@ async function doUserLogin(req, res) {
 //     }
 // }
 
+async function checkPinCodeIsAvelable(req, res) {
+    try {
+        const availablePinCodes = ['110001', '110002', '110003', '110004', '110005'];
+        const pinCode = req.params.pinCode;
+        const isAvailable = availablePinCodes.includes(pinCode);
+        if (isAvailable) {
+            res.status(200).send({ success: true, data: { pinCode: pinCode, isAvailable: true }, message: 'Delivery is available at this pincode.' });
+        } else {
+            res.status(200).send({ success: true, data: { pinCode: pinCode, isAvailable: false }, message: 'Delivery is not available at this pincode.' });
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(500).send({ success: false, message: 'Something Went Wrong...' });
+    }
+}
+async function addToCart(req, res) {
+    try {
+        const userId = req.user.id;
+        const { bookId, quantity } = req.body;
+        let user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).send({ success: false, message: 'User not found' });
+        }
+        const existingCartItemIndex = user.cart.findIndex(item => item.bookId.toString() === bookId);
+        if (existingCartItemIndex >= 0) {
+            user.cart[existingCartItemIndex].quantity += quantity;
+        } else {
+            user.cart.push({ bookId, quantity });
+        }
+        await user.save();
+        res.status(200).send({ success: true, message: 'Book added to cart successfully' });
+    }
+    catch (err) {
+        console.log(err);
+        res.status(500).send({ success: false, message: 'Something Went Wrong...' });
+    }
+}
 module.exports = {
     doAdminLogin,
     addUser,
-    doUserLogin
+    doUserLogin,
+    checkPinCodeIsAvelable,
+    addToCart
 }
